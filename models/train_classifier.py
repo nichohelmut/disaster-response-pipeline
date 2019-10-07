@@ -1,24 +1,90 @@
+import re
+import numpy as np
+import pandas as pd
 import sys
-
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.metrics import confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.base import BaseEstimator, TransformerMixin
+from sqlalchemy import create_engine
+nltk.download(['punkt', 'wordnet'])
+from sklearn.metrics import classification_report
+from sklearn.metrics import precision_recall_fscore_support
 
 def load_data(database_filepath):
-    pass
+    
+    """
+    input: created SQLite database in data/process_data.py
+    output: database content in form of a dataframe and split up in X and Y value
+    """
+
+    engine = create_engine(database_filepath)
+    df =  pd.read_sql('Disaster_messages', con=engine)
+    X = df.message
+    Y = df.iloc[:, 4:]
 
 
 def tokenize(text):
-    pass
+
+    """
+    input: original message text
+    output: Tokenized, cleaned, and lemmatized text
+    """
+    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    detected_urls = re.findall(url_regex, text)
+    for url in detected_urls:
+        text = text.replace(url, "urlplaceholder")
+
+    tokens = word_tokenize(text)
+    lemmatizer = WordNetLemmatizer()
+
+    clean_tokens = []
+    for tok in tokens:
+        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
+        clean_tokens.append(clean_tok)
+
+    return clean_tokens
 
 
 def build_model():
-    pass
+    """
+    Input: None
+    Output: Results of GridSearchCV (gs)
+    """
+    from sklearn.multioutput import MultiOutputClassifier
+    moc = MultiOutputClassifier(RandomForestClassifier())
 
+    pipeline = Pipeline([
+        ('vect', CountVectorizer(tokenizer=tokenize)),
+        ('tfidf', TfidfTransformer()),
+        ('clf', moc)
+    ])
+
+    parameters = {'clf__estimator__max_depth': [10, 50, None],
+             'clf__estimator__min_samples_leaf': [2, 5, 10]
+             }
+
+    gs = GridSearchCV(pipeline, parameters)
+
+    return gs
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
-
+    
+    y_pred = model.predict(X_test)
+    df_y_pred = pd.DataFrame(y_pred, columns = Y_test.columns)
+    for column in category_names:
+        print('------------------------------------------------------\n')
+        print('FEATURE: {}\n'.format(column))
+        print(classification_report(Y_test[column], df_y_pred[column]))
 
 def save_model(model, model_filepath):
-    pass
+    import pickle
+    pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
