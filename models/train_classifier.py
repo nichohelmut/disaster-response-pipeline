@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 nltk.download(['punkt', 'wordnet'])
 from sklearn.metrics import classification_report
 from sklearn.metrics import precision_recall_fscore_support
+import pickle
 
 def load_data(database_filepath):
     
@@ -22,11 +23,13 @@ def load_data(database_filepath):
     input: created SQLite database in data/process_data.py
     output: database content in form of a dataframe and split up in X and Y value
     """
-
-    engine = create_engine(database_filepath)
-    df =  pd.read_sql('Disaster_messages', con=engine)
-    X = df.message
+    engine = create_engine('sqlite:///' + database_filepath)
+    df =  pd.read_sql_table('Disaster', con=engine)
+    X = df['message']
     Y = df.iloc[:, 4:]
+    category_names = list(df.columns[4:])
+
+    return X, Y, category_names
 
 
 def tokenize(text):
@@ -74,7 +77,10 @@ def build_model():
     return gs
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    
+    """
+    input: model, X_test, y_test, category_names, list of category strings
+    output: Print accuracy and classfication report for each category
+    """
     y_pred = model.predict(X_test)
     df_y_pred = pd.DataFrame(y_pred, columns = Y_test.columns)
     for column in category_names:
@@ -83,6 +89,10 @@ def evaluate_model(model, X_test, Y_test, category_names):
         print(classification_report(Y_test[column], df_y_pred[column]))
 
 def save_model(model, model_filepath):
+    """
+    input: model, model_filepath
+    output: A pickle file of saved model
+    """
     import pickle
     pickle.dump(model, open(model_filepath, 'wb'))
 
