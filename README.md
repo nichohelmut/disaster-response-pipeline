@@ -6,13 +6,13 @@ With natural language processing methods and machine learning skills message dat
 
 ### File Descriptions:
 The repository consists of three main folders:
-    data:
+    1. data:
     - categories.csv: dataset including all the categories
     - messages.csv: dataset including all messages
     - process_data.py: reads in the data, cleans and stores it in a SQL database
-    models:
+    2. models:
     - train_classifier.py: includes the code necessary to load data, transform it using natural language processing, run a           machine learning model using GridSearchCV and train it
-    app:
+    3. app:
     - Flask app and the user interface used to predict results and display them
     templates: folder containing the html templates
     
