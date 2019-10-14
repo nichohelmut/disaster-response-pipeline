@@ -39,32 +39,30 @@ model = joblib.load("../models/classifier.pkl")
 def index():
     
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
     categories_names = df.columns[5:].to_series().apply(lambda x: x[:-2])
-    print(categories_names)
     categoies_counts = df.iloc[:, 5:].sum(axis=0)
+    categories_shares = categoies_counts / categoies_counts.sum()
 
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
                 Bar(
                     x=genre_names,
-                    y=genre_counts
+                    y=genre_counts.sort_values(ascending=False)
                 )
             ],
 
             'layout': {
                 'title': 'Distribution of Message Genres',
                 'yaxis': {
-                    'title': "Count"
+                    'title': 'Count'
                 },
                 'xaxis': {
-                    'title': "Genre"
+                    'title': 'Genre'
                 }
             }
         },
@@ -72,17 +70,35 @@ def index():
             'data': [
                 Bar(
                     x=categories_names,
-                    y=categoies_counts
+                    y=categoies_counts.sort_values(ascending=False)
                 )
             ],
 
             'layout': {
                 'title': 'Total Number of Messages per Category',
                 'yaxis': {
-                    'title': "Count"
+                    'title': 'Count'
                 },
                 'xaxis': {
-                    'title': "Categories"
+                    'title': 'Categories'
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=categories_names,
+                    y=categories_shares.sort_values(ascending=False)
+                )
+            ],
+
+            'layout': {
+                'title': 'Total Shares per Category',
+                'yaxis': {
+                    'title': 'Share'
+                },
+                'xaxis': {
+                    'title': 'Categories'
                 }
             }
         }
